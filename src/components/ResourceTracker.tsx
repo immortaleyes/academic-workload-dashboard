@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { useResource } from "@/context/ResourceContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResourceFilter } from "@/types/faculty";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, BookOpen, Flask, CheckCircle, Clock } from "lucide-react";
+import { Building, BookOpen, Beaker, CheckCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { ResourceCard } from "@/components/ResourceCard";
@@ -14,7 +13,6 @@ export const ResourceTracker: React.FC = () => {
   const { resources, loading, currentFilter, setCurrentFilter } = useResource();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  // Filter resources based on the selected filter
   const filteredResources = resources.filter(resource => {
     if (currentFilter === "all") return true;
     if (currentFilter === "classroom" && resource.type === "classroom") return true;
@@ -48,7 +46,7 @@ export const ResourceTracker: React.FC = () => {
                   <BookOpen className="h-4 w-4 mr-2" /> Classrooms
                 </TabsTrigger>
                 <TabsTrigger value="lab" className="flex items-center justify-center">
-                  <Flask className="h-4 w-4 mr-2" /> Labs
+                  <Beaker className="h-4 w-4 mr-2" /> Labs
                 </TabsTrigger>
                 <TabsTrigger value="available" className="flex items-center justify-center">
                   <CheckCircle className="h-4 w-4 mr-2" /> Available

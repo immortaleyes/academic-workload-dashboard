@@ -19,7 +19,7 @@ const createResourceSchedule = (baseDate: Date, resourceId: string) => {
           title: "Programming Lab",
           startTime: setHours(setMinutes(today, 0), 14),
           endTime: setHours(setMinutes(today, 0), 17),
-          type: "lab"
+          type: "lab" as const
         },
         {
           id: `${resourceId}-2`,
@@ -29,7 +29,7 @@ const createResourceSchedule = (baseDate: Date, resourceId: string) => {
           title: "Physics Lab",
           startTime: setHours(setMinutes(tomorrow, 0), 10),
           endTime: setHours(setMinutes(tomorrow, 0), 13),
-          type: "lab"
+          type: "lab" as const
         }
       ];
     case "r2": // Lecture Hall A
@@ -42,7 +42,7 @@ const createResourceSchedule = (baseDate: Date, resourceId: string) => {
           title: "Algorithms Lecture",
           startTime: setHours(setMinutes(today, 0), 9),
           endTime: setHours(setMinutes(today, 0), 11),
-          type: "class"
+          type: "class" as const
         },
         {
           id: `${resourceId}-2`,
@@ -52,7 +52,7 @@ const createResourceSchedule = (baseDate: Date, resourceId: string) => {
           title: "Calculus Lecture",
           startTime: setHours(setMinutes(today, 0), 12),
           endTime: setHours(setMinutes(today, 0), 14),
-          type: "class"
+          type: "class" as const
         }
       ];
     case "r3": // Physics Lab 201
@@ -63,7 +63,7 @@ const createResourceSchedule = (baseDate: Date, resourceId: string) => {
           title: "Maintenance",
           startTime: setHours(setMinutes(today, 0), 8),
           endTime: setHours(setMinutes(today, 0), 10),
-          type: "maintenance"
+          type: "maintenance" as const
         }
       ];
     default:
