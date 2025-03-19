@@ -10,17 +10,18 @@ import { AvailabilityFilter } from "@/types/faculty";
 import { Calendar, CalendarDays, CalendarRange, Building, PieChart } from "lucide-react";
 import { ResourceTracker } from "@/components/ResourceTracker";
 import { FacultyWorkloadDashboard } from "@/components/FacultyWorkloadDashboard";
+import { CalendarIntegration } from "@/components/CalendarIntegration";
 
 const Dashboard: React.FC = () => {
   const { faculty, loading, currentFilter, setCurrentFilter } = useFaculty();
-  const [activeTab, setActiveTab] = React.useState<"faculty" | "resources" | "dashboard">("dashboard");
+  const [activeTab, setActiveTab] = React.useState<"faculty" | "resources" | "dashboard" | "calendar">("dashboard");
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
       <main className="flex-1 container px-6 py-8 mx-auto">
-        <Tabs defaultValue="dashboard" onValueChange={(value) => setActiveTab(value as "faculty" | "resources" | "dashboard")}>
+        <Tabs defaultValue="dashboard" onValueChange={(value) => setActiveTab(value as "faculty" | "resources" | "dashboard" | "calendar")}>
           <TabsList className="mb-6">
             <TabsTrigger value="dashboard">
               <PieChart className="h-4 w-4 mr-2" />
@@ -28,6 +29,10 @@ const Dashboard: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value="faculty">Faculty Management</TabsTrigger>
             <TabsTrigger value="resources">Resource Tracker</TabsTrigger>
+            <TabsTrigger value="calendar">
+              <Calendar className="h-4 w-4 mr-2" />
+              Calendar Integration
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="dashboard">
@@ -75,6 +80,41 @@ const Dashboard: React.FC = () => {
           
           <TabsContent value="resources">
             <ResourceTracker />
+          </TabsContent>
+          
+          <TabsContent value="calendar">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2">
+                <CalendarIntegration />
+              </div>
+              <div className="md:col-span-1">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Calendar Tips</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="text-sm">
+                      <h4 className="font-medium mb-1">Automatic Reminders</h4>
+                      <p className="text-muted-foreground">
+                        Events synced to Google Calendar will include 30-minute reminders by default to help faculty stay on schedule.
+                      </p>
+                    </div>
+                    <div className="text-sm">
+                      <h4 className="font-medium mb-1">Scheduling Conflicts</h4>
+                      <p className="text-muted-foreground">
+                        The system will automatically detect and notify you of any double-bookings or scheduling conflicts.
+                      </p>
+                    </div>
+                    <div className="text-sm">
+                      <h4 className="font-medium mb-1">Sync Options</h4>
+                      <p className="text-muted-foreground">
+                        You can sync schedules for individual faculty members or the entire faculty roster with one click.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </main>
