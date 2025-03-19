@@ -7,6 +7,7 @@ export interface FacultyMember {
   position: string;
   image?: string;
   workload: Workload;
+  schedule: ScheduleEntry[];
 }
 
 export interface Workload {
@@ -20,3 +21,19 @@ export interface WorkloadUpdate {
   field: keyof Workload;
   value: number;
 }
+
+export interface ScheduleEntry {
+  id: string;
+  title: string;
+  type: "teaching" | "lab" | "meeting";
+  startTime: Date;
+  endTime: Date;
+}
+
+export type TimeSlot = {
+  day: string;
+  start: string;
+  end: string;
+};
+
+export type AvailabilityFilter = "day" | "week" | "month";

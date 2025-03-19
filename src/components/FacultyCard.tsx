@@ -1,12 +1,20 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { FacultyMember } from "@/types/faculty";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
 import { WorkloadChart } from "@/components/WorkloadChart";
 import { WorkloadEditor } from "@/components/WorkloadEditor";
+import { FacultyAvailability } from "@/components/FacultyAvailability";
+import { PieChart, Calendar } from "lucide-react";
 
 interface FacultyCardProps {
   faculty: FacultyMember;
@@ -43,22 +51,39 @@ export const FacultyCard: React.FC<FacultyCardProps> = ({ faculty }) => {
         </div>
       </CardHeader>
       <CardContent className="p-4 grid gap-4">
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="text-sm font-medium">Current Workload</h4>
-            <Badge variant="outline" className="font-semibold">
-              {totalHours} hours total
-            </Badge>
-          </div>
-          <Separator className="my-2" />
-          <div className="h-[180px] pt-2">
-            <WorkloadChart workload={workload} />
-          </div>
-        </div>
-        
-        <Separator className="my-1" />
-        
-        <WorkloadEditor faculty={faculty} />
+        <Tabs defaultValue="workload">
+          <TabsList className="grid grid-cols-2 mb-4">
+            <TabsTrigger value="workload" className="flex items-center justify-center">
+              <PieChart className="mr-2 h-4 w-4" /> Workload
+            </TabsTrigger>
+            <TabsTrigger value="availability" className="flex items-center justify-center">
+              <Calendar className="mr-2 h-4 w-4" /> Availability
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="workload">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-sm font-medium">Current Workload</h4>
+                <Badge variant="outline" className="font-semibold">
+                  {totalHours} hours total
+                </Badge>
+              </div>
+              <Separator className="my-2" />
+              <div className="h-[180px] pt-2">
+                <WorkloadChart workload={workload} />
+              </div>
+            </div>
+            
+            <Separator className="my-1" />
+            
+            <WorkloadEditor faculty={faculty} />
+          </TabsContent>
+          
+          <TabsContent value="availability">
+            <FacultyAvailability faculty={faculty} />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

@@ -5,9 +5,13 @@ import { useFaculty } from "@/context/FacultyContext";
 import { Header } from "@/components/Header";
 import { FacultyGrid } from "@/components/FacultyGrid";
 import { WorkloadSummary } from "@/components/WorkloadSummary";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AvailabilityFilter } from "@/types/faculty";
+import { Calendar, CalendarDays, CalendarRange } from "lucide-react";
 
 const Dashboard: React.FC = () => {
-  const { faculty, loading } = useFaculty();
+  const { faculty, loading, currentFilter, setCurrentFilter } = useFaculty();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -17,6 +21,33 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="md:col-span-4 lg:col-span-1">
             <WorkloadSummary faculty={faculty} />
+            
+            <Card className="mt-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                  Availability View
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue={currentFilter} onValueChange={(value) => setCurrentFilter(value as AvailabilityFilter)}>
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="day" className="flex items-center justify-center">
+                      <Calendar className="h-4 w-4 mr-2" /> Day
+                    </TabsTrigger>
+                    <TabsTrigger value="week" className="flex items-center justify-center">
+                      <CalendarDays className="h-4 w-4 mr-2" /> Week
+                    </TabsTrigger>
+                    <TabsTrigger value="month" className="flex items-center justify-center">
+                      <CalendarRange className="h-4 w-4 mr-2" /> Month
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Filter faculty availability by day, week, or month to identify free slots.
+                </p>
+              </CardContent>
+            </Card>
           </div>
           
           <div className="md:col-span-4 lg:col-span-3">

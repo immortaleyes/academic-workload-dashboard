@@ -1,5 +1,85 @@
 
 import { FacultyMember } from "@/types/faculty";
+import { addDays, addHours, startOfDay, setHours, setMinutes } from "date-fns";
+
+// Helper to create schedule entries
+const createSchedule = (baseDate: Date, facultyId: string) => {
+  const today = startOfDay(baseDate);
+  const tomorrow = addDays(today, 1);
+  const dayAfter = addDays(today, 2);
+  
+  // Create different schedules for each faculty member
+  switch(facultyId) {
+    case "f1": // Dr. Emily Chen
+      return [
+        {
+          id: `${facultyId}-1`,
+          title: "Algorithms Lecture",
+          type: "teaching" as const,
+          startTime: setHours(setMinutes(today, 0), 9),
+          endTime: setHours(setMinutes(today, 0), 11),
+        },
+        {
+          id: `${facultyId}-2`,
+          title: "Programming Lab",
+          type: "lab" as const,
+          startTime: setHours(setMinutes(today, 0), 14),
+          endTime: setHours(setMinutes(today, 0), 17),
+        },
+        {
+          id: `${facultyId}-3`,
+          title: "Faculty Meeting",
+          type: "meeting" as const,
+          startTime: setHours(setMinutes(tomorrow, 0), 10),
+          endTime: setHours(setMinutes(tomorrow, 0), 12),
+        },
+      ];
+    case "f2": // Prof. David Williams
+      return [
+        {
+          id: `${facultyId}-1`,
+          title: "Calculus Lecture",
+          type: "teaching" as const,
+          startTime: setHours(setMinutes(today, 0), 10),
+          endTime: setHours(setMinutes(today, 0), 12),
+        },
+        {
+          id: `${facultyId}-2`,
+          title: "Linear Algebra",
+          type: "teaching" as const,
+          startTime: setHours(setMinutes(tomorrow, 0), 14),
+          endTime: setHours(setMinutes(tomorrow, 0), 16),
+        },
+        {
+          id: `${facultyId}-3`,
+          title: "Department Meeting",
+          type: "meeting" as const,
+          startTime: setHours(setMinutes(dayAfter, 0), 9),
+          endTime: setHours(setMinutes(dayAfter, 0), 11),
+        },
+      ];
+    default:
+      return [
+        {
+          id: `${facultyId}-1`,
+          title: `${facultyId} Class`,
+          type: "teaching" as const,
+          startTime: addHours(today, 9),
+          endTime: addHours(today, 11),
+        },
+        {
+          id: `${facultyId}-2`,
+          title: `${facultyId} Lab`,
+          type: "lab" as const,
+          startTime: addHours(tomorrow, 13),
+          endTime: addHours(tomorrow, 15),
+        },
+      ];
+  }
+};
+
+// Create our base faculty data
+const baseDate = new Date();
 
 export const facultyData: FacultyMember[] = [
   {
@@ -13,7 +93,8 @@ export const facultyData: FacultyMember[] = [
       teachingHours: 12,
       labHours: 6,
       meetingHours: 4
-    }
+    },
+    schedule: createSchedule(baseDate, "f1")
   },
   {
     id: "f2",
@@ -26,7 +107,8 @@ export const facultyData: FacultyMember[] = [
       teachingHours: 16,
       labHours: 0,
       meetingHours: 8
-    }
+    },
+    schedule: createSchedule(baseDate, "f2")
   },
   {
     id: "f3",
@@ -39,7 +121,8 @@ export const facultyData: FacultyMember[] = [
       teachingHours: 10,
       labHours: 8,
       meetingHours: 3
-    }
+    },
+    schedule: createSchedule(baseDate, "f3")
   },
   {
     id: "f4",
@@ -52,7 +135,8 @@ export const facultyData: FacultyMember[] = [
       teachingHours: 14,
       labHours: 10,
       meetingHours: 5
-    }
+    },
+    schedule: createSchedule(baseDate, "f4")
   },
   {
     id: "f5",
@@ -65,7 +149,8 @@ export const facultyData: FacultyMember[] = [
       teachingHours: 8,
       labHours: 12,
       meetingHours: 6
-    }
+    },
+    schedule: createSchedule(baseDate, "f5")
   },
   {
     id: "f6",
@@ -78,6 +163,7 @@ export const facultyData: FacultyMember[] = [
       teachingHours: 9,
       labHours: 14,
       meetingHours: 2
-    }
+    },
+    schedule: createSchedule(baseDate, "f6")
   }
 ];
