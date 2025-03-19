@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResourceFilter } from "@/types/faculty";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, BookOpen, Beaker, CheckCircle, Clock } from "lucide-react";
+import { Building, BookOpen, Beaker, CheckCircle, Clock, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { ResourceCard } from "@/components/ResourceCard";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 export const ResourceTracker: React.FC = () => {
   const { resources, loading, currentFilter, setCurrentFilter } = useResource();
@@ -22,6 +23,27 @@ export const ResourceTracker: React.FC = () => {
     if (currentFilter === "occupied" && resource.currentStatus === "occupied") return true;
     return false;
   });
+  
+  // Calculate resource utilization statistics
+  const totalResources = resources.length;
+  const classroomCount = resources.filter(r => r.type === "classroom").length;
+  const labCount = resources.filter(r => r.type === "lab").length;
+  
+  const availableCount = resources.filter(r => r.currentStatus === "available").length;
+  const occupiedCount = resources.filter(r => r.currentStatus === "occupied").length;
+  const maintenanceCount = resources.filter(r => r.currentStatus === "maintenance").length;
+  
+  // Prepare data for utilization chart
+  const utilizationData = [
+    { name: "Available", value: availableCount, color: "#10b981" },
+    { name: "Occupied", value: occupiedCount, color: "#f97316" },
+    { name: "Maintenance", value: maintenanceCount, color: "#f59e0b" }
+  ];
+  
+  const resourceTypeData = [
+    { name: "Classrooms", value: classroomCount, color: "#3b82f6" },
+    { name: "Labs", value: labCount, color: "#8b5cf6" }
+  ];
 
   return (
     <div className="space-y-6">
@@ -87,6 +109,130 @@ export const ResourceTracker: React.FC = () => {
               onSelect={(date) => date && setSelectedDate(date)}
               className="rounded-md border shadow-sm"
             />
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Add Resource Utilization Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              Resource Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={utilizationData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {utilizationData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => [`${value} resources`, null]}
+                    contentStyle={{
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                      border: 'none',
+                      padding: '8px 12px',
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Building className="h-5 w-5 text-muted-foreground" />
+              Resource Types
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={resourceTypeData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {resourceTypeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => [`${value} resources`, null]}
+                    contentStyle={{
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                      border: 'none',
+                      padding: '8px 12px',
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle className="text-lg">Resource Utilization</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium flex items-center">
+                    <BookOpen className="h-4 w-4 mr-1.5 text-blue-500" />
+                    Classrooms
+                  </span>
+                  <span className="text-sm text-muted-foreground">{classroomCount} total</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium flex items-center">
+                    <Beaker className="h-4 w-4 mr-1.5 text-purple-500" />
+                    Labs
+                  </span>
+                  <span className="text-sm text-muted-foreground">{labCount} total</span>
+                </div>
+              </div>
+              
+              <div className="pt-2 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Utilization Rate</span>
+                  <span className="text-sm font-semibold">
+                    {Math.round((occupiedCount / totalResources) * 100) || 0}% in use
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-primary h-2.5 rounded-full" 
+                    style={{ width: `${Math.round((occupiedCount / totalResources) * 100) || 0}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
