@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { FacultyMember } from "@/types/faculty";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Clock, BookOpen, Flask, Users } from "lucide-react";
+import { Clock, BookOpen, Beaker, Users } from "lucide-react";
 
 interface WorkloadSummaryProps {
   faculty: FacultyMember[];
@@ -13,6 +13,7 @@ export const WorkloadSummary: React.FC<WorkloadSummaryProps> = ({ faculty }) => 
   const summaryData = useMemo(() => {
     if (!faculty.length) return { teaching: 0, lab: 0, meeting: 0, total: 0 };
     
+    // Calculate totals using reduce
     const totals = faculty.reduce(
       (acc, member) => {
         acc.teaching += member.workload.teachingHours;
@@ -20,9 +21,10 @@ export const WorkloadSummary: React.FC<WorkloadSummaryProps> = ({ faculty }) => 
         acc.meeting += member.workload.meetingHours;
         return acc;
       },
-      { teaching: 0, lab: 0, meeting: 0 }
+      { teaching: 0, lab: 0, meeting: 0, total: 0 } // Include total in initial object
     );
     
+    // Calculate total here
     totals.total = totals.teaching + totals.lab + totals.meeting;
     
     return totals;
@@ -53,13 +55,13 @@ export const WorkloadSummary: React.FC<WorkloadSummaryProps> = ({ faculty }) => 
                 <span className="text-xs text-muted-foreground">({teachingPercent}%)</span>
               </div>
             </div>
-            <Progress value={teachingPercent} className="h-2" indicatorClassName="bg-blue-500" />
+            <Progress value={teachingPercent} className="h-2 bg-secondary [&>div]:bg-blue-500" />
           </div>
           
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Flask className="h-4 w-4 text-green-500" />
+                <Beaker className="h-4 w-4 text-green-500" />
                 <span className="text-sm font-medium">Lab Work</span>
               </div>
               <div className="flex items-center gap-2">
@@ -67,7 +69,7 @@ export const WorkloadSummary: React.FC<WorkloadSummaryProps> = ({ faculty }) => 
                 <span className="text-xs text-muted-foreground">({labPercent}%)</span>
               </div>
             </div>
-            <Progress value={labPercent} className="h-2" indicatorClassName="bg-green-500" />
+            <Progress value={labPercent} className="h-2 bg-secondary [&>div]:bg-green-500" />
           </div>
           
           <div className="space-y-2">
@@ -81,7 +83,7 @@ export const WorkloadSummary: React.FC<WorkloadSummaryProps> = ({ faculty }) => 
                 <span className="text-xs text-muted-foreground">({meetingPercent}%)</span>
               </div>
             </div>
-            <Progress value={meetingPercent} className="h-2" indicatorClassName="bg-amber-500" />
+            <Progress value={meetingPercent} className="h-2 bg-secondary [&>div]:bg-amber-500" />
           </div>
         </div>
         
