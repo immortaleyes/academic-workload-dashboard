@@ -28,6 +28,7 @@ export interface ScheduleEntry {
   type: "teaching" | "lab" | "meeting";
   startTime: Date;
   endTime: Date;
+  location?: string; // Room where the activity takes place
 }
 
 export type TimeSlot = {
@@ -37,3 +38,31 @@ export type TimeSlot = {
 };
 
 export type AvailabilityFilter = "day" | "week" | "month";
+
+// Resource tracking types
+export interface Resource {
+  id: string;
+  name: string;
+  type: "classroom" | "lab";
+  capacity: number;
+  building: string;
+  floor: string;
+  equipment: string[];
+  currentStatus: ResourceStatus;
+  schedule: ResourceSchedule[];
+}
+
+export type ResourceStatus = "available" | "occupied" | "maintenance";
+
+export interface ResourceSchedule {
+  id: string;
+  resourceId: string;
+  facultyId?: string;
+  facultyName?: string;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  type: "class" | "lab" | "meeting" | "maintenance";
+}
+
+export type ResourceFilter = "all" | "classroom" | "lab" | "available" | "occupied";
