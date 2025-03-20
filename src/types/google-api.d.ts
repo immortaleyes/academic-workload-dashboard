@@ -41,6 +41,8 @@ declare namespace gapi {
         }>;
         
         // Methods for 'delete' and 'list' using bracket notation
+        // The syntax here was causing TS1005 errors
+        // Using a proper index signature
         [key: string]: any;
       }
     }
