@@ -40,7 +40,7 @@ declare namespace gapi {
           result: any;
         }>;
         
-        // Add methods for 'delete' and 'list' using string index signature
+        // Methods for 'delete' and 'list' using bracket notation
         [key: string]: any;
       }
     }
