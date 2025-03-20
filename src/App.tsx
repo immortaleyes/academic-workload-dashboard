@@ -22,9 +22,15 @@ const queryClient = new QueryClient({
   },
 });
 
-// Get Auth0 credentials from environment
-const AUTH0_DOMAIN = "dev-example.us.auth0.com"; // Replace with your Auth0 domain
-const AUTH0_CLIENT_ID = "your-client-id"; // Replace with your Auth0 client ID
+// Development mode - these are dummy credentials
+// Replace these with your actual Auth0 credentials in production
+const isDevelopment = true;
+const AUTH0_DOMAIN = isDevelopment 
+  ? "dummy-auth0-domain.us.auth0.com"
+  : "YOUR_AUTH0_DOMAIN";
+const AUTH0_CLIENT_ID = isDevelopment
+  ? "dummy-client-id"
+  : "YOUR_AUTH0_CLIENT_ID";
 
 const App = () => (
   <Auth0Provider

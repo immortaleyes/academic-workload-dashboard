@@ -2,10 +2,9 @@
 import { toast } from "@/components/ui/use-toast";
 import { ScheduleEntry, ResourceSchedule } from "@/types/faculty";
 
-// This API key is a placeholder - in a production app you'd use environment variables
-// or better yet, handle API calls from a backend service
-const API_KEY = "YOUR_GOOGLE_API_KEY"; 
-const CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID";
+// Development API key and client ID (replace with actual keys in production)
+const API_KEY = "DUMMY_API_KEY_FOR_DEVELOPMENT"; 
+const CLIENT_ID = "DUMMY_CLIENT_ID_FOR_DEVELOPMENT";
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
 const SCOPES = "https://www.googleapis.com/auth/calendar";
 
@@ -19,6 +18,10 @@ export class GoogleCalendarService {
   private isSignedIn = false;
   private tokenClient: any = null;
   
+  // For development: bypass actual Google API calls
+  private devMode = true;
+  private mockEvents: any[] = [];
+  
   private constructor() {}
   
   public static getInstance(): GoogleCalendarService {
@@ -30,6 +33,13 @@ export class GoogleCalendarService {
   
   public async initialize(): Promise<boolean> {
     if (this.isInitialized) return true;
+    
+    // For development, always return success without actually loading scripts
+    if (this.devMode) {
+      this.isInitialized = true;
+      console.log("🔄 [DEV MODE] Google Calendar service initialized");
+      return true;
+    }
     
     try {
       // Load the Google API client library
@@ -117,6 +127,18 @@ export class GoogleCalendarService {
       await this.initialize();
     }
     
+    // For development, always return success
+    if (this.devMode) {
+      this.isSignedIn = true;
+      console.log("🔄 [DEV MODE] Signed in to Google Calendar");
+      toast({
+        title: "Development Mode",
+        description: "Dummy sign-in successful. In production, this would connect to your Google account.",
+        duration: 5000,
+      });
+      return true;
+    }
+    
     try {
       this.tokenClient.requestAccessToken();
       return true;
@@ -133,6 +155,18 @@ export class GoogleCalendarService {
   }
   
   public async signOut(): Promise<void> {
+    // For development, just reset the flag
+    if (this.devMode) {
+      this.isSignedIn = false;
+      console.log("🔄 [DEV MODE] Signed out of Google Calendar");
+      toast({
+        title: "Development Mode",
+        description: "Signed out of dummy Google Calendar connection",
+        duration: 3000,
+      });
+      return;
+    }
+    
     if (!this.isInitialized || !this.isSignedIn) return;
     
     try {
@@ -158,8 +192,31 @@ export class GoogleCalendarService {
   }
   
   public async addEvent(event: ScheduleEntry): Promise<string | null> {
-    if (!this.isInitialized || !this.isSignedIn) {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+    
+    if (!this.isSignedIn && !this.devMode) {
       await this.signIn();
+    }
+    
+    // For development, store event in memory
+    if (this.devMode) {
+      const eventId = `dev-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      this.mockEvents.push({
+        id: eventId,
+        ...event,
+        reminders: []
+      });
+      console.log("🔄 [DEV MODE] Added event:", event.title);
+      
+      toast({
+        title: "Event Added (Development)",
+        description: `Added "${event.title}" to mock calendar`,
+        duration: 3000,
+      });
+      
+      return eventId;
     }
     
     try {
@@ -198,9 +255,167 @@ export class GoogleCalendarService {
     }
   }
   
-  public async setupReminder(eventId: string, minutesBefore: number): Promise<boolean> {
-    if (!this.isInitialized || !this.isSignedIn) {
+  public async updateEvent(eventId: string, updatedEvent: ScheduleEntry): Promise<boolean> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+    
+    if (!this.isSignedIn && !this.devMode) {
       await this.signIn();
+    }
+    
+    // For development, update mock event
+    if (this.devMode) {
+      const eventIndex = this.mockEvents.findIndex(e => e.id === eventId);
+      
+      if (eventIndex === -1) {
+        console.error("🔄 [DEV MODE] Event not found for update:", eventId);
+        return false;
+      }
+      
+      this.mockEvents[eventIndex] = {
+        ...this.mockEvents[eventIndex],
+        ...updatedEvent
+      };
+      
+      console.log("🔄 [DEV MODE] Updated event:", updatedEvent.title);
+      
+      toast({
+        title: "Event Updated (Development)",
+        description: `Updated "${updatedEvent.title}" in mock calendar`,
+        duration: 3000,
+      });
+      
+      return true;
+    }
+    
+    try {
+      // Get the existing event to preserve fields we're not updating
+      const event = await gapi.client.calendar.events.get({
+        calendarId: 'primary',
+        eventId: eventId,
+      });
+      
+      // Update the event with new details
+      const updatedCalendarEvent = {
+        ...event.result,
+        summary: updatedEvent.title,
+        start: {
+          dateTime: updatedEvent.startTime.toISOString(),
+        },
+        end: {
+          dateTime: updatedEvent.endTime.toISOString(),
+        },
+        description: `Event Type: ${updatedEvent.type}`,
+      };
+      
+      await gapi.client.calendar.events.update({
+        calendarId: 'primary',
+        eventId: eventId,
+        resource: updatedCalendarEvent,
+      });
+      
+      toast({
+        title: "Event Updated",
+        description: `Successfully updated "${updatedEvent.title}" in Google Calendar`,
+        duration: 3000,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating event in Google Calendar:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update event in Google Calendar",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return false;
+    }
+  }
+  
+  public async deleteEvent(eventId: string): Promise<boolean> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+    
+    if (!this.isSignedIn && !this.devMode) {
+      await this.signIn();
+    }
+    
+    // For development, delete mock event
+    if (this.devMode) {
+      const eventIndex = this.mockEvents.findIndex(e => e.id === eventId);
+      
+      if (eventIndex === -1) {
+        console.error("🔄 [DEV MODE] Event not found for deletion:", eventId);
+        return false;
+      }
+      
+      const deletedEvent = this.mockEvents[eventIndex];
+      this.mockEvents.splice(eventIndex, 1);
+      
+      console.log("🔄 [DEV MODE] Deleted event:", deletedEvent.title);
+      
+      toast({
+        title: "Event Deleted (Development)",
+        description: `Deleted "${deletedEvent.title}" from mock calendar`,
+        duration: 3000,
+      });
+      
+      return true;
+    }
+    
+    try {
+      await gapi.client.calendar.events.delete({
+        calendarId: 'primary',
+        eventId: eventId,
+      });
+      
+      toast({
+        title: "Event Deleted",
+        description: "Successfully deleted event from Google Calendar",
+        duration: 3000,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting event from Google Calendar:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete event from Google Calendar",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return false;
+    }
+  }
+  
+  public async setupReminder(eventId: string, minutesBefore: number): Promise<boolean> {
+    if (!this.isInitialized || (!this.isSignedIn && !this.devMode)) {
+      await this.signIn();
+    }
+    
+    // For development, add reminder to mock event
+    if (this.devMode) {
+      const eventIndex = this.mockEvents.findIndex(e => e.id === eventId);
+      
+      if (eventIndex === -1) {
+        console.error("🔄 [DEV MODE] Event not found for adding reminder:", eventId);
+        return false;
+      }
+      
+      if (!this.mockEvents[eventIndex].reminders) {
+        this.mockEvents[eventIndex].reminders = [];
+      }
+      
+      this.mockEvents[eventIndex].reminders.push({
+        method: 'popup',
+        minutes: minutesBefore
+      });
+      
+      console.log(`🔄 [DEV MODE] Added ${minutesBefore}min reminder to event:`, this.mockEvents[eventIndex].title);
+      return true;
     }
     
     try {
@@ -230,6 +445,48 @@ export class GoogleCalendarService {
     } catch (error) {
       console.error("Error setting up reminder:", error);
       return false;
+    }
+  }
+  
+  // Get all events from calendar (development mode returns mock events)
+  public async getEvents(): Promise<any[]> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+    
+    if (!this.isSignedIn && !this.devMode) {
+      await this.signIn();
+    }
+    
+    // For development, return mock events
+    if (this.devMode) {
+      console.log("🔄 [DEV MODE] Returning mock events:", this.mockEvents.length);
+      return this.mockEvents;
+    }
+    
+    try {
+      const now = new Date();
+      const oneMonthLater = new Date(now);
+      oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+      
+      const response = await gapi.client.calendar.events.list({
+        calendarId: 'primary',
+        timeMin: now.toISOString(),
+        timeMax: oneMonthLater.toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime'
+      });
+      
+      return response.result.items || [];
+    } catch (error) {
+      console.error("Error fetching events from Google Calendar:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch events from Google Calendar",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return [];
     }
   }
   

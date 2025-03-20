@@ -1,13 +1,22 @@
 
 import React, { useState, useEffect } from "react";
 import { useFaculty } from "@/context/FacultyContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { googleCalendarService } from "@/lib/googleCalendarService";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
-import { AlertTriangle, Calendar, CheckCircle, Send } from "lucide-react";
+import { 
+  AlertTriangle, 
+  Calendar, 
+  CheckCircle, 
+  Send, 
+  RefreshCw,
+  Trash2,
+  Bell
+} from "lucide-react";
 import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
 
 export const CalendarSyncStatus: React.FC = () => {
   const { faculty } = useFaculty();
@@ -15,22 +24,37 @@ export const CalendarSyncStatus: React.FC = () => {
   const [syncInProgress, setSyncInProgress] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [calendarConflicts, setCalendarConflicts] = useState<any[]>([]);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const checkGoogleAuth = async () => {
       await googleCalendarService.initialize();
       setIsGoogleConnected(googleCalendarService.isAuthenticated());
+      if (googleCalendarService.isAuthenticated()) {
+        fetchCalendarEvents();
+      }
     };
     
     checkGoogleAuth();
     
-    // Simulate detecting calendar conflicts
-    const allSchedules = faculty.flatMap(f => f.schedule);
-    googleCalendarService.detectScheduleConflicts(allSchedules)
-      .then(conflicts => {
-        setCalendarConflicts(conflicts);
-      });
+    // Detect calendar conflicts
+    const detectConflicts = async () => {
+      const allSchedules = faculty.flatMap(f => f.schedule);
+      const conflicts = await googleCalendarService.detectScheduleConflicts(allSchedules);
+      setCalendarConflicts(conflicts);
+    };
+    
+    detectConflicts();
   }, [faculty]);
+
+  const fetchCalendarEvents = async () => {
+    setIsRefreshing(true);
+    const events = await googleCalendarService.getEvents();
+    setCalendarEvents(events);
+    setIsRefreshing(false);
+  };
 
   const handleGoogleSignIn = async () => {
     const success = await googleCalendarService.signIn();
@@ -42,6 +66,7 @@ export const CalendarSyncStatus: React.FC = () => {
         description: "Connected to Google Calendar successfully!",
         duration: 3000,
       });
+      fetchCalendarEvents();
     }
   };
 
@@ -52,10 +77,12 @@ export const CalendarSyncStatus: React.FC = () => {
     }
     
     setSyncInProgress(true);
+    setSyncProgress(0);
     let successCount = 0;
     const totalEvents = faculty.reduce((sum, f) => sum + f.schedule.length, 0);
     
     try {
+      let processedCount = 0;
       for (const facultyMember of faculty) {
         for (const event of facultyMember.schedule) {
           const eventId = await googleCalendarService.addEvent({
@@ -67,10 +94,14 @@ export const CalendarSyncStatus: React.FC = () => {
             await googleCalendarService.setupReminder(eventId, 30);
             successCount++;
           }
+          
+          processedCount++;
+          setSyncProgress(Math.round((processedCount / totalEvents) * 100));
         }
       }
       
       setLastSyncTime(new Date());
+      fetchCalendarEvents();
       
       toast({
         title: "Calendar Synchronized",
@@ -87,7 +118,24 @@ export const CalendarSyncStatus: React.FC = () => {
       });
     } finally {
       setSyncInProgress(false);
+      setSyncProgress(100);
+      
+      // Reset progress bar after showing 100%
+      setTimeout(() => {
+        setSyncProgress(0);
+      }, 1000);
     }
+  };
+
+  const handleRefreshEvents = async () => {
+    setIsRefreshing(true);
+    await fetchCalendarEvents();
+    
+    toast({
+      title: "Calendar Refreshed",
+      description: "Calendar events have been refreshed",
+      duration: 3000,
+    });
   };
 
   return (
@@ -96,8 +144,11 @@ export const CalendarSyncStatus: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            Google Calendar Synchronization
+            Google Calendar Integration
           </CardTitle>
+          <CardDescription>
+            Synchronize faculty schedules with Google Calendar and manage events
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -121,18 +172,39 @@ export const CalendarSyncStatus: React.FC = () => {
               
               {!isGoogleConnected ? (
                 <Button onClick={handleGoogleSignIn}>
+                  <Calendar className="h-4 w-4 mr-2" />
                   Connect to Google Calendar
                 </Button>
               ) : (
-                <Button 
-                  onClick={handleSyncAllToCalendar}
-                  disabled={syncInProgress}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  {syncInProgress ? "Syncing..." : "Sync All Schedules"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline"
+                    onClick={handleRefreshEvents}
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                  <Button 
+                    onClick={handleSyncAllToCalendar}
+                    disabled={syncInProgress}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {syncInProgress ? "Syncing..." : "Sync All Schedules"}
+                  </Button>
+                </div>
               )}
             </div>
+            
+            {syncInProgress && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs mb-1">
+                  <span>Syncing faculty schedules...</span>
+                  <span>{syncProgress}%</span>
+                </div>
+                <Progress value={syncProgress} className="h-2" />
+              </div>
+            )}
             
             {lastSyncTime && (
               <div className="py-2 border-t">
@@ -172,6 +244,46 @@ export const CalendarSyncStatus: React.FC = () => {
                 </div>
               )}
             </div>
+            
+            {isGoogleConnected && (
+              <div className="py-2 border-t">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium">Upcoming Calendar Events</div>
+                  <Badge variant="outline" className="text-xs">
+                    {calendarEvents.length} events
+                  </Badge>
+                </div>
+                
+                {calendarEvents.length > 0 ? (
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                    {calendarEvents.slice(0, 6).map((event, index) => (
+                      <div key={index} className="bg-gray-50 border rounded-md p-3">
+                        <div className="flex justify-between items-start">
+                          <div className="font-medium text-sm">{event.title || 'Untitled Event'}</div>
+                          <Badge variant="outline" className="text-xs flex items-center gap-1">
+                            <Bell className="h-3 w-3" />
+                            {event.reminders?.length || 0} reminders
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {event.startTime && format(new Date(event.startTime), "EEE, MMM d • h:mm a")}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {calendarEvents.length > 6 && (
+                      <div className="text-center text-sm text-muted-foreground py-2">
+                        +{calendarEvents.length - 6} more events
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center text-sm text-muted-foreground py-4">
+                    No upcoming events in your calendar
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
