@@ -1,25 +1,32 @@
-
 import React, { useState, useEffect } from "react";
 import { useFaculty } from "@/context/FacultyContext";
 import { useResource } from "@/context/ResourceContext";
+import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { WorkloadSummary } from "@/components/WorkloadSummary";
 import { FreeSlotsFinder } from "@/components/FreeSlotsFinder";
 import { ResourceUsageSummary } from "@/components/ResourceUsageSummary";
 import { CalendarSyncStatus } from "@/components/CalendarSyncStatus";
 import { ExternalSyncStatus } from "@/components/ExternalSyncStatus";
-import { HelpCircle, RefreshCw, Send } from "lucide-react";
+import { AdminDashboard } from "@/components/AdminDashboard";
+import { HelpCircle, RefreshCw, Send, ShieldAlert } from "lucide-react";
 import { googleCalendarService } from "@/lib/googleCalendarService";
 import { toast } from "@/components/ui/use-toast";
 
 export const HODDashboard: React.FC = () => {
   const { faculty, loading: facultyLoading } = useFaculty();
   const { resources, loading: resourcesLoading } = useResource();
+  const { user, hasPermission } = useAuth();
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+
+  if (hasPermission("admin")) {
+    return <AdminDashboard />;
+  }
 
   useEffect(() => {
     const checkGoogleAuth = async () => {
@@ -34,7 +41,6 @@ export const HODDashboard: React.FC = () => {
   const handleRefreshData = () => {
     setIsRefreshing(true);
     
-    // Simulate refreshing data (in a real app, you'd call APIs here)
     setTimeout(() => {
       setIsRefreshing(false);
       setLastSyncTime(new Date());
@@ -78,12 +84,20 @@ export const HODDashboard: React.FC = () => {
             variant="outline" 
             size="sm" 
             onClick={handleSendNotifications}
+            disabled={!hasPermission("admin")}
           >
             <Send className="h-4 w-4 mr-2" />
             Send Notifications
           </Button>
         </div>
       </div>
+      
+      <Alert>
+        <ShieldAlert className="h-4 w-4" />
+        <AlertDescription>
+          Welcome, <strong>{user?.name}</strong>. You are logged in with <strong>{user?.role.toUpperCase()}</strong> privileges.
+        </AlertDescription>
+      </Alert>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>

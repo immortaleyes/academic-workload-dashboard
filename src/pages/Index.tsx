@@ -1,6 +1,7 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useFaculty } from "@/context/FacultyContext";
+import { useAuth } from "@/context/AuthContext";
 import { Header } from "@/components/Header";
 import { FacultyGrid } from "@/components/FacultyGrid";
 import { WorkloadSummary } from "@/components/WorkloadSummary";
@@ -12,9 +13,11 @@ import { ResourceTracker } from "@/components/ResourceTracker";
 import { FacultyWorkloadDashboard } from "@/components/FacultyWorkloadDashboard";
 import { CalendarIntegration } from "@/components/CalendarIntegration";
 import { HODDashboard } from "@/components/HODDashboard";
+import { Button } from "@/components/ui/button";
 
 const Dashboard: React.FC = () => {
   const { faculty, loading, currentFilter, setCurrentFilter } = useFaculty();
+  const { user, logout, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = React.useState<"faculty" | "resources" | "dashboard" | "calendar" | "hod">("hod");
 
   return (
@@ -23,22 +26,31 @@ const Dashboard: React.FC = () => {
       
       <main className="flex-1 container px-6 py-8 mx-auto">
         <Tabs defaultValue="hod" onValueChange={(value) => setActiveTab(value as "faculty" | "resources" | "dashboard" | "calendar" | "hod")}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="hod">
-              <BadgeCheck className="h-4 w-4 mr-2" />
-              HOD Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="dashboard">
-              <PieChart className="h-4 w-4 mr-2" />
-              Workload Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="faculty">Faculty Management</TabsTrigger>
-            <TabsTrigger value="resources">Resource Tracker</TabsTrigger>
-            <TabsTrigger value="calendar">
-              <Calendar className="h-4 w-4 mr-2" />
-              Calendar Integration
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex justify-between items-center mb-6">
+            <TabsList>
+              <TabsTrigger value="hod">
+                <BadgeCheck className="h-4 w-4 mr-2" />
+                {hasPermission("admin") ? "Admin Dashboard" : "HOD Dashboard"}
+              </TabsTrigger>
+              <TabsTrigger value="dashboard">
+                <PieChart className="h-4 w-4 mr-2" />
+                Workload Dashboard
+              </TabsTrigger>
+              <TabsTrigger value="faculty">Faculty Management</TabsTrigger>
+              <TabsTrigger value="resources">Resource Tracker</TabsTrigger>
+              <TabsTrigger value="calendar">
+                <Calendar className="h-4 w-4 mr-2" />
+                Calendar Integration
+              </TabsTrigger>
+            </TabsList>
+            
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                Logged in as <span className="font-medium">{user?.name}</span> ({user?.role.toUpperCase()})
+              </div>
+              <Button variant="outline" size="sm" onClick={logout}>Log Out</Button>
+            </div>
+          </div>
           
           <TabsContent value="hod">
             <HODDashboard />
@@ -92,38 +104,7 @@ const Dashboard: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="calendar">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-2">
-                <CalendarIntegration />
-              </div>
-              <div className="md:col-span-1">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Calendar Tips</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-sm">
-                      <h4 className="font-medium mb-1">Automatic Reminders</h4>
-                      <p className="text-muted-foreground">
-                        Events synced to Google Calendar will include 30-minute reminders by default to help faculty stay on schedule.
-                      </p>
-                    </div>
-                    <div className="text-sm">
-                      <h4 className="font-medium mb-1">Scheduling Conflicts</h4>
-                      <p className="text-muted-foreground">
-                        The system will automatically detect and notify you of any double-bookings or scheduling conflicts.
-                      </p>
-                    </div>
-                    <div className="text-sm">
-                      <h4 className="font-medium mb-1">Sync Options</h4>
-                      <p className="text-muted-foreground">
-                        You can sync schedules for individual faculty members or the entire faculty roster with one click.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+            <CalendarIntegration />
           </TabsContent>
         </Tabs>
       </main>
