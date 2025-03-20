@@ -29,8 +29,13 @@ export const ResourceUsageSummary: React.FC = () => {
   const classrooms = resources.filter(r => r.type === "classroom");
   const labs = resources.filter(r => r.type === "lab");
   
-  const classroomUsage = classrooms.filter(r => r.currentStatus === "occupied").length / Math.max(classrooms.length, 1) * 100;
-  const labUsage = labs.filter(r => r.currentStatus === "occupied").length / Math.max(labs.length, 1) * 100;
+  const classroomUsage = classrooms.length > 0 
+    ? (classrooms.filter(r => r.currentStatus === "occupied").length / classrooms.length) * 100 
+    : 0;
+    
+  const labUsage = labs.length > 0 
+    ? (labs.filter(r => r.currentStatus === "occupied").length / labs.length) * 100 
+    : 0;
 
   // Format resource status for display
   const getStatusBadgeClass = (status: ResourceStatus) => {
@@ -70,7 +75,7 @@ export const ResourceUsageSummary: React.FC = () => {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value) => [`${value} resources (${Math.round(value * 100 / totalResources)}%)`, null]}
+                    formatter={(value) => [`${value} resources (${Math.round(Number(value) * 100 / totalResources)}%)`, null]}
                     contentStyle={{
                       borderRadius: '8px',
                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
