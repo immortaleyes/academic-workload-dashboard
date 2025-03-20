@@ -41,7 +41,6 @@ declare namespace gapi {
         }>;
         
         // Add methods for 'delete' and 'list' using string index signature
-        // This allows us to use bracket notation like gapi.client.calendar.events['delete']
         [key: string]: any;
       }
     }
