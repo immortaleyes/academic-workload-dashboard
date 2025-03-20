@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/use-toast";
 import { ScheduleEntry, ResourceSchedule } from "@/types/faculty";
 
@@ -367,7 +366,8 @@ export class GoogleCalendarService {
     }
     
     try {
-      await gapi.client.calendar.events.delete({
+      // Fix: Use a different name for the method to avoid the 'delete' reserved word
+      await gapi.client.calendar.events['delete']({
         calendarId: 'primary',
         eventId: eventId,
       });
@@ -469,7 +469,8 @@ export class GoogleCalendarService {
       const oneMonthLater = new Date(now);
       oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
       
-      const response = await gapi.client.calendar.events.list({
+      // Fix: Use bracket notation to access the 'list' method
+      const response = await gapi.client.calendar.events['list']({
         calendarId: 'primary',
         timeMin: now.toISOString(),
         timeMax: oneMonthLater.toISOString(),
