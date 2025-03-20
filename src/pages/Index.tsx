@@ -7,22 +7,27 @@ import { WorkloadSummary } from "@/components/WorkloadSummary";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AvailabilityFilter } from "@/types/faculty";
-import { Calendar, CalendarDays, CalendarRange, Building, PieChart } from "lucide-react";
+import { Calendar, CalendarDays, CalendarRange, Building, PieChart, BadgeCheck } from "lucide-react";
 import { ResourceTracker } from "@/components/ResourceTracker";
 import { FacultyWorkloadDashboard } from "@/components/FacultyWorkloadDashboard";
 import { CalendarIntegration } from "@/components/CalendarIntegration";
+import { HODDashboard } from "@/components/HODDashboard";
 
 const Dashboard: React.FC = () => {
   const { faculty, loading, currentFilter, setCurrentFilter } = useFaculty();
-  const [activeTab, setActiveTab] = React.useState<"faculty" | "resources" | "dashboard" | "calendar">("dashboard");
+  const [activeTab, setActiveTab] = React.useState<"faculty" | "resources" | "dashboard" | "calendar" | "hod">("hod");
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
       <main className="flex-1 container px-6 py-8 mx-auto">
-        <Tabs defaultValue="dashboard" onValueChange={(value) => setActiveTab(value as "faculty" | "resources" | "dashboard" | "calendar")}>
+        <Tabs defaultValue="hod" onValueChange={(value) => setActiveTab(value as "faculty" | "resources" | "dashboard" | "calendar" | "hod")}>
           <TabsList className="mb-6">
+            <TabsTrigger value="hod">
+              <BadgeCheck className="h-4 w-4 mr-2" />
+              HOD Dashboard
+            </TabsTrigger>
             <TabsTrigger value="dashboard">
               <PieChart className="h-4 w-4 mr-2" />
               Workload Dashboard
@@ -34,6 +39,10 @@ const Dashboard: React.FC = () => {
               Calendar Integration
             </TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="hod">
+            <HODDashboard />
+          </TabsContent>
           
           <TabsContent value="dashboard">
             <FacultyWorkloadDashboard />
