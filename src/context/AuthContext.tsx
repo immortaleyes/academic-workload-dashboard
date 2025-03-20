@@ -1,6 +1,5 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 
@@ -20,7 +19,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: () => void;
+  login: (username: string, password: string) => boolean;
   logout: () => void;
   hasPermission: (requiredRole: UserRole) => boolean;
 }
@@ -28,61 +27,84 @@ interface AuthContextType {
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Default roles mapping - in a real app, this would come from Auth0 roles/permissions
-const EMAIL_ROLE_MAP: Record<string, UserRole> = {
-  'admin@example.com': 'admin',
-  'hod@example.com': 'hod',
+// Dummy users for development
+const DUMMY_USERS = {
+  'admin': {
+    password: 'admin',
+    userData: {
+      email: 'admin@example.com',
+      name: 'Admin User',
+      role: 'admin' as UserRole,
+      picture: 'https://avatars.githubusercontent.com/u/1?v=4'
+    }
+  },
+  'hod': {
+    password: 'hod',
+    userData: {
+      email: 'hod@example.com',
+      name: 'HOD User',
+      role: 'hod' as UserRole,
+      picture: 'https://avatars.githubusercontent.com/u/2?v=4'
+    }
+  }
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { 
-    isAuthenticated, 
-    isLoading, 
-    loginWithRedirect, 
-    logout: auth0Logout, 
-    user: auth0User 
-  } = useAuth0();
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Effect to set user data when Auth0 authenticates
+  // Check for stored auth on mount
   useEffect(() => {
-    if (isAuthenticated && auth0User) {
-      // Map the Auth0 user to our app's user model
-      const email = auth0User.email || '';
-      const role = EMAIL_ROLE_MAP[email] || 'guest';
-      
-      setUser({
-        email,
-        name: auth0User.name || '',
-        role,
-        picture: auth0User.picture
-      });
-
-      // Show welcome toast
-      toast({
-        title: "Welcome back!",
-        description: `Logged in as ${role.toUpperCase()}`,
-      });
-    } else {
-      setUser(null);
+    const storedUser = localStorage.getItem('faculty-dashboard-user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        localStorage.removeItem('faculty-dashboard-user');
+      }
     }
-  }, [isAuthenticated, auth0User]);
+  }, []);
 
   // Login function
-  const login = () => {
-    loginWithRedirect({
-      appState: { returnTo: window.location.pathname }
-    });
+  const login = (username: string, password: string): boolean => {
+    setIsLoading(true);
+    
+    // Simulate network delay
+    setTimeout(() => {
+      const userRecord = DUMMY_USERS[username as keyof typeof DUMMY_USERS];
+      
+      if (userRecord && userRecord.password === password) {
+        setUser(userRecord.userData);
+        localStorage.setItem('faculty-dashboard-user', JSON.stringify(userRecord.userData));
+        
+        // Show welcome toast
+        toast({
+          title: "Welcome back!",
+          description: `Logged in as ${userRecord.userData.role.toUpperCase()}`,
+        });
+        
+        navigate('/');
+        setIsLoading(false);
+        return true;
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: "Invalid username or password",
+        });
+        setIsLoading(false);
+        return false;
+      }
+    }, 500);
+    
+    return false;
   };
 
   // Logout function
   const logout = () => {
-    auth0Logout({
-      logoutParams: {
-        returnTo: window.location.origin + '/login'
-      }
-    });
+    setUser(null);
+    localStorage.removeItem('faculty-dashboard-user');
     navigate('/login');
   };
 
@@ -106,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated,
+        isAuthenticated: !!user,
         isLoading,
         login,
         logout,
