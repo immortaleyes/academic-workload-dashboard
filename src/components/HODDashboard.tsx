@@ -50,7 +50,7 @@ export const HODDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <DashboardHeader 
-        user={user}
+        user={user} // Passing user from AuthContext, not as FacultyMember
         lastSyncTime={lastSyncTime}
         isRefreshing={isRefreshing}
         hasAdminPermission={hasPermission("admin")}

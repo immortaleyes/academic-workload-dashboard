@@ -1,11 +1,9 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Faculty } from "@/types/faculty";
-import { Resource } from "@/types/faculty"; // Using the same types file
+import { FacultyMember, Resource } from "@/types/faculty";
 
 interface DashboardStatsCardsProps {
-  faculty: Faculty[];
+  faculty: FacultyMember[];
   resources: Resource[];
   isGoogleConnected: boolean;
 }

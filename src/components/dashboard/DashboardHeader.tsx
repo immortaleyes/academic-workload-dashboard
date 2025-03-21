@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RefreshCw, Send, ShieldAlert } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { FacultyMember } from "@/types/faculty"; // Correct import
+import { User } from "@/context/AuthContext"; // Import User type from AuthContext
 
 interface DashboardHeaderProps {
-  user: FacultyMember | null; // Updated type
+  user: User | null; // Use User type from AuthContext instead of FacultyMember
   lastSyncTime: Date | null;
   isRefreshing: boolean;
   hasAdminPermission: boolean;
