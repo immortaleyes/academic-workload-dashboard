@@ -7,10 +7,10 @@ import { ResourceUsageSummary } from "@/components/ResourceUsageSummary";
 import { CalendarSyncStatus } from "@/components/CalendarSyncStatus";
 import { ExternalSyncStatus } from "@/components/ExternalSyncStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Faculty } from "@/types/faculty";
+import { FacultyMember } from "@/types/faculty"; // Correct import
 
 interface DashboardTabsProps {
-  faculty: Faculty[];
+  faculty: FacultyMember[]; // Updated type
 }
 
 export const DashboardTabs: React.FC<DashboardTabsProps> = ({ faculty }) => {

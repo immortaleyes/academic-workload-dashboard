@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RefreshCw, Send, ShieldAlert } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { User } from "@/types/faculty"; // Using the existing types
+import { FacultyMember } from "@/types/faculty"; // Correct import
 
 interface DashboardHeaderProps {
-  user: User | null;
+  user: FacultyMember | null; // Updated type
   lastSyncTime: Date | null;
   isRefreshing: boolean;
   hasAdminPermission: boolean;
