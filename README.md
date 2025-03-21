@@ -1,69 +1,115 @@
-# Welcome to your Lovable project
+# Academic Workload Dashboard
 
-## Project info
+## Project Info
 
-**URL**: https://lovable.dev/projects/e65f4244-5994-4360-968c-a899e67592cc
+**Academic Workload Dashboard** is a web application designed to help users manage and visualize academic workloads. This project allows users to input various academic tasks and track their progress, providing an easy way to balance work and academic life. The dashboard offers powerful features to stay organized, reduce stress, and keep academic goals on track.
 
-## How can I edit this code?
+## About the Developer
 
-There are several ways of editing your application.
+Hi there! I'm **Ajay Shriram Kushwaha**, the creator and maintainer of the **Academic Workload Dashboard**. I'm passionate about building tools that help students and professionals manage their workloads efficiently. With this project, my goal is to provide a seamless and intuitive way to handle academic tasks, stay organized, and improve productivity.
 
-**Use Lovable**
+I believe in the power of open-source and community-driven development, and I'm always open to collaboration, new ideas, and contributions from other developers. If you're passionate about helping others stay on top of their academic tasks, feel free to join me in making this tool even better!
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e65f4244-5994-4360-968c-a899e67592cc) and start prompting.
+## Table of Contents
 
-Changes made via Lovable will be committed automatically to this repo.
+1. [Project Overview](#project-overview)
+2. [Features](#features)
+3. [Installation and Setup](#installation-and-setup)
+4. [Usage](#usage)
+5. [Technologies Used](#technologies-used)
+6. [Contributing](#contributing)
+7. [License](#license)
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Project Overview
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+The **Academic Workload Dashboard** is a web application designed to help students, academics, and professionals track their academic tasks and workloads. It provides an intuitive interface to add tasks, track progress, and manage deadlines. This tool aims to improve productivity by organizing tasks, making it easier to focus on essential academic activities and reduce stress.
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Features
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- **Task Management**: Add and manage academic tasks like assignments, projects, exams, etc.
+- **Progress Tracker**: Visualize progress in real-time to stay on top of deadlines.
+- **Customizable UI**: Modify the layout according to your preferences to make the interface more user-friendly.
+- **Calendar Integration**: Sync tasks and deadlines with your calendar.
+- **Notifications**: Receive notifications when deadlines are approaching or tasks are due.
+  
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Installation and Setup
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+Follow these steps to set up the project locally:
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/immortaleyes/academic-workload-dashboard.git
+   ```
+
+2. **Navigate to the project folder**:
+   ```bash
+   cd academic-workload-dashboard
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+4. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+
+   This will start the application at [http://localhost:3000](http://localhost:3000).
+
+---
+
+### Usage
+
+Once the application is running locally, you can:
+
+- **Add new tasks**: Use the "Add Task" button to create a new task, including a description, due date, and priority.
+- **Track progress**: View the progress of your tasks in real-time. The application will show how much of the task is completed.
+- **Set deadlines**: Tasks can be assigned deadlines, and the dashboard will notify you as the deadline approaches.
+
+---
+
+### Technologies Used
+
+This project is built using the following technologies:
+
+**Frontend:**
+- React.js (for building the user interface)
+- Tailwind CSS (for styling)
+- Vite.js (for fast builds and development)
+
+**Backend:**
+- Currently, the project is front-end only. However, you can extend it with a backend service using Node.js or any preferred technology.
+
+**Tools:**
+- Node.js (for running the development server)
+- npm (for dependency management)
+
+---
+
+### Contributing
+
+I welcome contributions from anyone interested in improving this project! Here are a few ways you can contribute:
+
+- **Fix Bugs**: Report or fix bugs to make the application more stable.
+- **Add Features**: Add new features like better notification handling, data storage, etc.
+- **Improve Documentation**: Help by improving the documentation for a clearer understanding of the codebase and usage.
+
+If you'd like to contribute, feel free to fork the repository, make changes, and create a pull request. For any suggestions or issues, feel free to open a new issue or reach out!
+
+**Everyone is encouraged to contribute** — let's make this project better together!
+
+---
+
+### License
+
+This project is licensed under the MIT License.
+
 ```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/e65f4244-5994-4360-968c-a899e67592cc) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
