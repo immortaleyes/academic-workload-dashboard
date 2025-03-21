@@ -7,7 +7,7 @@ import { toast } from '@/components/ui/use-toast';
 export type UserRole = 'admin' | 'hod' | 'guest';
 
 // Define user interface
-interface User {
+export interface User {
   email: string;
   name: string;
   role: UserRole;
