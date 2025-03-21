@@ -20,6 +20,14 @@ export const CalendarIntegration: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    description: '',
+    startDate: '',
+    startTime: '',
+    endDate: '',
+    endTime: ''
+  });
 
   useEffect(() => {
     const checkGoogleAuth = async () => {
@@ -81,6 +89,102 @@ export const CalendarIntegration: React.FC = () => {
       title: "Refreshed",
       description: "Calendar events have been refreshed",
     });
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (window.confirm("Are you sure you want to delete this event?")) {
+      try {
+        const success = await googleCalendarService.deleteEvent(eventId);
+        if (success) {
+          setEvents(events.filter(event => event.id !== eventId));
+          toast({
+            title: "Event Deleted",
+            description: "The event has been removed from your calendar",
+          });
+        } else {
+          throw new Error("Failed to delete event");
+        }
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete calendar event",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewEvent(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // Validate inputs
+      if (!newEvent.title || !newEvent.startDate || !newEvent.startTime) {
+        toast({
+          title: "Missing Information",
+          description: "Please fill in the required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Create start and end dates
+      const startDateTime = new Date(`${newEvent.startDate}T${newEvent.startTime}`);
+      let endDateTime;
+      
+      if (newEvent.endDate && newEvent.endTime) {
+        endDateTime = new Date(`${newEvent.endDate}T${newEvent.endTime}`);
+      } else {
+        // Default to 1 hour later if not specified
+        endDateTime = new Date(startDateTime);
+        endDateTime.setHours(startDateTime.getHours() + 1);
+      }
+      
+      // Create event object
+      const eventToAdd = {
+        title: newEvent.title,
+        description: newEvent.description,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString()
+      };
+      
+      // Add event to calendar
+      const eventId = await googleCalendarService.addEvent(eventToAdd);
+      
+      if (eventId) {
+        toast({
+          title: "Event Created",
+          description: "New event has been added to your calendar",
+        });
+        
+        // Reset form and refresh events
+        setNewEvent({
+          title: '',
+          description: '',
+          startDate: '',
+          startTime: '',
+          endDate: '',
+          endTime: ''
+        });
+        setShowAddEvent(false);
+        fetchEvents();
+      } else {
+        throw new Error("Failed to create event");
+      }
+    } catch (error) {
+      console.error("Error creating event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create calendar event",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -159,7 +263,12 @@ export const CalendarIntegration: React.FC = () => {
                           {event.startTime ? format(new Date(event.startTime), "EEE, MMM d • h:mm a") : 'No date'}
                         </p>
                       </div>
-                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => handleDeleteEvent(event.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -184,9 +293,107 @@ export const CalendarIntegration: React.FC = () => {
                 <CardTitle>Add New Calendar Event</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  Event creation form implementation coming soon!
-                </p>
+                <form onSubmit={handleCreateEvent} className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="title" className="text-sm font-medium">
+                        Event Title *
+                      </label>
+                      <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        value={newEvent.title}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border rounded-md"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label htmlFor="description" className="text-sm font-medium">
+                        Description
+                      </label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        value={newEvent.description}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border rounded-md"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="startDate" className="text-sm font-medium">
+                          Start Date *
+                        </label>
+                        <input
+                          type="date"
+                          id="startDate"
+                          name="startDate"
+                          value={newEvent.startDate}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border rounded-md"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="startTime" className="text-sm font-medium">
+                          Start Time *
+                        </label>
+                        <input
+                          type="time"
+                          id="startTime"
+                          name="startTime"
+                          value={newEvent.startTime}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border rounded-md"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="endDate" className="text-sm font-medium">
+                          End Date
+                        </label>
+                        <input
+                          type="date"
+                          id="endDate"
+                          name="endDate"
+                          value={newEvent.endDate}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border rounded-md"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="endTime" className="text-sm font-medium">
+                          End Time
+                        </label>
+                        <input
+                          type="time"
+                          id="endTime"
+                          name="endTime"
+                          value={newEvent.endTime}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border rounded-md"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setShowAddEvent(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      Create Event
+                    </Button>
+                  </div>
+                </form>
               </CardContent>
             </Card>
           )}

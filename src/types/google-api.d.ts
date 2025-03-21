@@ -40,7 +40,7 @@ declare namespace gapi {
           result: any;
         }>;
         
-        // Define delete and list methods
+        // Define list method for calendar events
         function list(params: {
           calendarId: string;
           timeMin?: string;
@@ -55,7 +55,8 @@ declare namespace gapi {
           };
         }>;
         
-        function delete(params: {
+        // Use 'del' as the method name instead of 'delete' (reserved word)
+        function del(params: {
           calendarId: string;
           eventId: string;
         }): Promise<void>;

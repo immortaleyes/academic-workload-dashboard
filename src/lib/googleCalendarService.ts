@@ -181,6 +181,7 @@ class GoogleCalendarService {
 
     // Mock event creation for development
     if (process.env.NODE_ENV === 'development') {
+      console.log('Adding event to calendar:', event);
       return 'fake_event_' + Date.now();
     }
 
@@ -223,6 +224,7 @@ class GoogleCalendarService {
 
     // Mock reminder setup for development
     if (process.env.NODE_ENV === 'development') {
+      console.log(`Setting up ${minutes} minute reminder for event ${eventId}`);
       return true;
     }
 
@@ -316,6 +318,32 @@ class GoogleCalendarService {
     } catch (error) {
       console.error('Failed to get events from Google Calendar:', error);
       return [];
+    }
+  }
+
+  /**
+   * Delete an event from Google Calendar
+   */
+  async deleteEvent(eventId: string): Promise<boolean> {
+    if (!this.isAuthenticated() || !eventId) return false;
+
+    // Mock deletion for development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Deleting event ${eventId}`);
+      return true;
+    }
+
+    try {
+      // @ts-ignore - gapi is loaded from CDN
+      await gapi.client.calendar.events.del({
+        calendarId: 'primary',
+        eventId: eventId,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Failed to delete event:', error);
+      return false;
     }
   }
 
