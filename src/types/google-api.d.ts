@@ -40,10 +40,25 @@ declare namespace gapi {
           result: any;
         }>;
         
-        // Methods for 'delete' and 'list' using bracket notation
-        // The syntax here was causing TS1005 errors
-        // Using a proper index signature
-        [key: string]: any;
+        // Define delete and list methods
+        function list(params: {
+          calendarId: string;
+          timeMin?: string;
+          timeMax?: string;
+          maxResults?: number;
+          singleEvents?: boolean;
+          orderBy?: string;
+        }): Promise<{
+          result: {
+            items: any[];
+            [key: string]: any;
+          };
+        }>;
+        
+        function delete(params: {
+          calendarId: string;
+          eventId: string;
+        }): Promise<void>;
       }
     }
   }

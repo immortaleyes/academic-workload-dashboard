@@ -1,548 +1,377 @@
-import { toast } from "@/components/ui/use-toast";
-import { ScheduleEntry, ResourceSchedule } from "@/types/faculty";
 
-// Development API key and client ID (replace with actual keys in production)
-const API_KEY = "DUMMY_API_KEY_FOR_DEVELOPMENT"; 
-const CLIENT_ID = "DUMMY_CLIENT_ID_FOR_DEVELOPMENT";
-const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
-const SCOPES = "https://www.googleapis.com/auth/calendar";
+import { toast } from '@/components/ui/use-toast';
 
-/**
- * Google Calendar Service
- * Handles authentication, calendar operations, and conflict detection
- */
-export class GoogleCalendarService {
-  private static instance: GoogleCalendarService;
-  private isInitialized = false;
-  private isSignedIn = false;
+// Set up the API key and client ID
+const API_KEY = 'YOUR_API_KEY'; // Replace with your actual API key
+const CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your actual client ID
+const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'];
+const SCOPES = 'https://www.googleapis.com/auth/calendar';
+
+class GoogleCalendarService {
   private tokenClient: any = null;
-  
-  // For development: bypass actual Google API calls
-  private devMode = true;
-  private mockEvents: any[] = [];
-  
-  private constructor() {}
-  
-  public static getInstance(): GoogleCalendarService {
-    if (!GoogleCalendarService.instance) {
-      GoogleCalendarService.instance = new GoogleCalendarService();
-    }
-    return GoogleCalendarService.instance;
-  }
-  
-  public async initialize(): Promise<boolean> {
-    if (this.isInitialized) return true;
-    
-    // For development, always return success without actually loading scripts
-    if (this.devMode) {
-      this.isInitialized = true;
-      console.log("🔄 [DEV MODE] Google Calendar service initialized");
-      return true;
-    }
-    
+  private initialized = false;
+
+  /**
+   * Initialize the Google API client
+   */
+  async initialize() {
+    // Avoid multiple initializations
+    if (this.initialized) return true;
+
     try {
-      // Load the Google API client library
-      await this.loadGapiScript();
-      await this.loadGsiScript();
+      // Load the gapi client
+      await this.loadGapiClient();
       
-      await new Promise<void>((resolve) => {
-        gapi.load('client', async () => {
-          await gapi.client.init({
-            apiKey: API_KEY,
-            discoveryDocs: DISCOVERY_DOCS,
-          });
-          resolve();
-        });
-      });
+      // Only in development, for testing
+      if (process.env.NODE_ENV === 'development') {
+        console.info('🔄 [DEV MODE] Google Calendar service initialized');
+      }
       
-      this.tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (response: any) => {
-          if (response.error !== undefined) {
-            throw response;
-          }
-          this.isSignedIn = true;
-          toast({
-            title: "Success",
-            description: "Successfully connected to Google Calendar!",
-            duration: 3000,
-          });
-        },
-      });
-      
-      this.isInitialized = true;
+      this.initialized = true;
       return true;
     } catch (error) {
-      console.error("Error initializing Google Calendar service:", error);
-      toast({
-        title: "Error",
-        description: "Failed to initialize Google Calendar integration",
-        variant: "destructive",
-        duration: 3000,
-      });
+      console.error('Failed to initialize Google Calendar service:', error);
       return false;
     }
   }
-  
-  private loadGapiScript(): Promise<void> {
+
+  /**
+   * Load the Google API client
+   */
+  private loadGapiClient(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (document.getElementById('gapi-script')) {
-        resolve();
+      // Simulating successful loading in development
+      if (process.env.NODE_ENV === 'development') {
+        setTimeout(resolve, 100);
         return;
       }
-      
-      const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
-      script.id = 'gapi-script';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => resolve();
-      script.onerror = (error) => reject(error);
-      document.body.appendChild(script);
-    });
-  }
-  
-  private loadGsiScript(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (document.getElementById('gsi-script')) {
-        resolve();
-        return;
+
+      // In production, would load the actual library
+      try {
+        // @ts-ignore - gapi is loaded from CDN
+        gapi.load('client', async () => {
+          try {
+            // @ts-ignore - gapi is loaded from CDN
+            await gapi.client.init({
+              apiKey: API_KEY,
+              discoveryDocs: DISCOVERY_DOCS,
+            });
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        });
+      } catch (error) {
+        reject(error);
       }
-      
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.id = 'gsi-script';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => resolve();
-      script.onerror = (error) => reject(error);
-      document.body.appendChild(script);
     });
   }
-  
-  public async signIn(): Promise<boolean> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-    
-    // For development, always return success
-    if (this.devMode) {
-      this.isSignedIn = true;
-      console.log("🔄 [DEV MODE] Signed in to Google Calendar");
-      toast({
-        title: "Development Mode",
-        description: "Dummy sign-in successful. In production, this would connect to your Google account.",
-        duration: 5000,
-      });
+
+  /**
+   * Sign in to Google
+   */
+  async signIn(): Promise<boolean> {
+    if (!this.initialized) await this.initialize();
+
+    // Mock successful sign-in for development
+    if (process.env.NODE_ENV === 'development') {
+      // Store a fake token in localStorage to simulate authenticated state
+      localStorage.setItem('google_calendar_token', JSON.stringify({
+        access_token: 'fake_token_' + Date.now(),
+        expiry: Date.now() + 3600000 // 1 hour
+      }));
       return true;
     }
-    
+
     try {
+      if (!this.tokenClient) {
+        // @ts-ignore - google.accounts is loaded from CDN
+        this.tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: (tokenResponse: any) => {
+            if (tokenResponse.error) {
+              throw new Error(tokenResponse.error);
+            }
+            localStorage.setItem('google_calendar_token', JSON.stringify({
+              access_token: tokenResponse.access_token,
+              expiry: Date.now() + 3600000 // 1 hour
+            }));
+          },
+        });
+      }
+
+      // Request access token
       this.tokenClient.requestAccessToken();
       return true;
     } catch (error) {
-      console.error("Error signing in to Google Calendar:", error);
+      console.error('Google sign in failed:', error);
       toast({
-        title: "Error",
-        description: "Failed to sign in to Google Calendar",
+        title: "Google Sign In Failed",
+        description: "Could not connect to Google Calendar",
         variant: "destructive",
-        duration: 3000,
       });
       return false;
     }
   }
-  
-  public async signOut(): Promise<void> {
-    // For development, just reset the flag
-    if (this.devMode) {
-      this.isSignedIn = false;
-      console.log("🔄 [DEV MODE] Signed out of Google Calendar");
-      toast({
-        title: "Development Mode",
-        description: "Signed out of dummy Google Calendar connection",
-        duration: 3000,
-      });
-      return;
-    }
-    
-    if (!this.isInitialized || !this.isSignedIn) return;
-    
+
+  /**
+   * Sign out from Google
+   */
+  async signOut(): Promise<void> {
+    // Remove token from localStorage
+    localStorage.removeItem('google_calendar_token');
+
+    // For development mode, we're done
+    if (process.env.NODE_ENV === 'development') return;
+
+    // In production, revoke the token
     try {
-      const token = gapi.client.getToken();
-      if (token !== null) {
-        google.accounts.oauth2.revoke(token.access_token, () => {
+      const token = this.getToken();
+      if (token) {
+        // @ts-ignore - google.accounts is loaded from CDN
+        google.accounts.oauth2.revoke(token, () => {
+          // @ts-ignore - gapi is loaded from CDN
           gapi.client.setToken(null);
-          this.isSignedIn = false;
-          toast({
-            title: "Signed Out",
-            description: "Successfully signed out of Google Calendar",
-            duration: 3000,
-          });
         });
       }
     } catch (error) {
-      console.error("Error signing out of Google Calendar:", error);
+      console.error('Google sign out failed:', error);
     }
   }
-  
-  public isAuthenticated(): boolean {
-    return this.isSignedIn;
-  }
-  
-  public async addEvent(event: ScheduleEntry): Promise<string | null> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-    
-    if (!this.isSignedIn && !this.devMode) {
-      await this.signIn();
-    }
-    
-    // For development, store event in memory
-    if (this.devMode) {
-      const eventId = `dev-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      this.mockEvents.push({
-        id: eventId,
-        ...event,
-        reminders: []
-      });
-      console.log("🔄 [DEV MODE] Added event:", event.title);
-      
-      toast({
-        title: "Event Added (Development)",
-        description: `Added "${event.title}" to mock calendar`,
-        duration: 3000,
-      });
-      
-      return eventId;
-    }
-    
+
+  /**
+   * Check if user is authenticated with Google
+   */
+  isAuthenticated(): boolean {
+    const tokenData = localStorage.getItem('google_calendar_token');
+    if (!tokenData) return false;
+
     try {
-      const calendarEvent = {
-        summary: event.title,
-        start: {
-          dateTime: event.startTime.toISOString(),
-        },
-        end: {
-          dateTime: event.endTime.toISOString(),
-        },
-        description: `Event Type: ${event.type}`,
-      };
-      
+      const { expiry } = JSON.parse(tokenData);
+      return expiry > Date.now();
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Get the authentication token
+   */
+  private getToken(): string | null {
+    const tokenData = localStorage.getItem('google_calendar_token');
+    if (!tokenData) return null;
+
+    try {
+      const { access_token } = JSON.parse(tokenData);
+      return access_token;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Add an event to Google Calendar
+   */
+  async addEvent(event: any): Promise<string | null> {
+    if (!this.isAuthenticated()) {
+      const signedIn = await this.signIn();
+      if (!signedIn) return null;
+    }
+
+    // Mock event creation for development
+    if (process.env.NODE_ENV === 'development') {
+      return 'fake_event_' + Date.now();
+    }
+
+    try {
+      // @ts-ignore - gapi is loaded from CDN
       const response = await gapi.client.calendar.events.insert({
         calendarId: 'primary',
-        resource: calendarEvent,
+        resource: {
+          summary: event.title,
+          location: event.location || '',
+          description: event.description || '',
+          start: {
+            dateTime: event.startTime,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
+          end: {
+            dateTime: event.endTime,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
+        },
       });
-      
-      toast({
-        title: "Event Added",
-        description: `Successfully added "${event.title}" to Google Calendar`,
-        duration: 3000,
-      });
-      
+
       return response.result.id;
     } catch (error) {
-      console.error("Error adding event to Google Calendar:", error);
+      console.error('Failed to add event to Google Calendar:', error);
       toast({
-        title: "Error",
+        title: "Calendar Error",
         description: "Failed to add event to Google Calendar",
         variant: "destructive",
-        duration: 3000,
       });
       return null;
     }
   }
-  
-  public async updateEvent(eventId: string, updatedEvent: ScheduleEntry): Promise<boolean> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-    
-    if (!this.isSignedIn && !this.devMode) {
-      await this.signIn();
-    }
-    
-    // For development, update mock event
-    if (this.devMode) {
-      const eventIndex = this.mockEvents.findIndex(e => e.id === eventId);
-      
-      if (eventIndex === -1) {
-        console.error("🔄 [DEV MODE] Event not found for update:", eventId);
-        return false;
-      }
-      
-      this.mockEvents[eventIndex] = {
-        ...this.mockEvents[eventIndex],
-        ...updatedEvent
-      };
-      
-      console.log("🔄 [DEV MODE] Updated event:", updatedEvent.title);
-      
-      toast({
-        title: "Event Updated (Development)",
-        description: `Updated "${updatedEvent.title}" in mock calendar`,
-        duration: 3000,
-      });
-      
+
+  /**
+   * Set up a reminder for an event
+   */
+  async setupReminder(eventId: string, minutes: number): Promise<boolean> {
+    if (!this.isAuthenticated() || !eventId) return false;
+
+    // Mock reminder setup for development
+    if (process.env.NODE_ENV === 'development') {
       return true;
     }
-    
+
     try {
-      // Get the existing event to preserve fields we're not updating
-      const event = await gapi.client.calendar.events.get({
+      // Get the event first
+      // @ts-ignore - gapi is loaded from CDN
+      const getResponse = await gapi.client.calendar.events.get({
         calendarId: 'primary',
         eventId: eventId,
       });
+
+      const event = getResponse.result;
       
-      // Update the event with new details
-      const updatedCalendarEvent = {
-        ...event.result,
-        summary: updatedEvent.title,
-        start: {
-          dateTime: updatedEvent.startTime.toISOString(),
-        },
-        end: {
-          dateTime: updatedEvent.endTime.toISOString(),
-        },
-        description: `Event Type: ${updatedEvent.type}`,
+      // Add reminder
+      event.reminders = {
+        useDefault: false,
+        overrides: [
+          { method: 'popup', minutes },
+        ],
       };
-      
+
+      // Update the event
+      // @ts-ignore - gapi is loaded from CDN
       await gapi.client.calendar.events.update({
         calendarId: 'primary',
         eventId: eventId,
-        resource: updatedCalendarEvent,
+        resource: event,
       });
-      
-      toast({
-        title: "Event Updated",
-        description: `Successfully updated "${updatedEvent.title}" in Google Calendar`,
-        duration: 3000,
-      });
-      
+
       return true;
     } catch (error) {
-      console.error("Error updating event in Google Calendar:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update event in Google Calendar",
-        variant: "destructive",
-        duration: 3000,
-      });
+      console.error('Failed to set up reminder:', error);
       return false;
     }
   }
-  
-  public async deleteEvent(eventId: string): Promise<boolean> {
-    if (!this.isInitialized) {
-      await this.initialize();
+
+  /**
+   * Get events from Google Calendar
+   */
+  async getEvents(days = 7): Promise<any[]> {
+    if (!this.isAuthenticated()) {
+      const signedIn = await this.signIn();
+      if (!signedIn) return [];
     }
-    
-    if (!this.isSignedIn && !this.devMode) {
-      await this.signIn();
-    }
-    
-    // For development, delete mock event
-    if (this.devMode) {
-      const eventIndex = this.mockEvents.findIndex(e => e.id === eventId);
-      
-      if (eventIndex === -1) {
-        console.error("🔄 [DEV MODE] Event not found for deletion:", eventId);
-        return false;
-      }
-      
-      const deletedEvent = this.mockEvents[eventIndex];
-      this.mockEvents.splice(eventIndex, 1);
-      
-      console.log("🔄 [DEV MODE] Deleted event:", deletedEvent.title);
-      
-      toast({
-        title: "Event Deleted (Development)",
-        description: `Deleted "${deletedEvent.title}" from mock calendar`,
-        duration: 3000,
-      });
-      
-      return true;
-    }
-    
-    try {
-      // Fix: Use a different name for the method to avoid the 'delete' reserved word
-      await gapi.client.calendar.events['delete']({
-        calendarId: 'primary',
-        eventId: eventId,
-      });
-      
-      toast({
-        title: "Event Deleted",
-        description: "Successfully deleted event from Google Calendar",
-        duration: 3000,
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Error deleting event from Google Calendar:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete event from Google Calendar",
-        variant: "destructive",
-        duration: 3000,
-      });
-      return false;
-    }
-  }
-  
-  public async setupReminder(eventId: string, minutesBefore: number): Promise<boolean> {
-    if (!this.isInitialized || (!this.isSignedIn && !this.devMode)) {
-      await this.signIn();
-    }
-    
-    // For development, add reminder to mock event
-    if (this.devMode) {
-      const eventIndex = this.mockEvents.findIndex(e => e.id === eventId);
-      
-      if (eventIndex === -1) {
-        console.error("🔄 [DEV MODE] Event not found for adding reminder:", eventId);
-        return false;
-      }
-      
-      if (!this.mockEvents[eventIndex].reminders) {
-        this.mockEvents[eventIndex].reminders = [];
-      }
-      
-      this.mockEvents[eventIndex].reminders.push({
-        method: 'popup',
-        minutes: minutesBefore
-      });
-      
-      console.log(`🔄 [DEV MODE] Added ${minutesBefore}min reminder to event:`, this.mockEvents[eventIndex].title);
-      return true;
-    }
-    
-    try {
-      const event = await gapi.client.calendar.events.get({
-        calendarId: 'primary',
-        eventId: eventId,
-      });
-      
-      const updatedEvent = { 
-        ...event.result,
-        reminders: {
-          useDefault: false,
-          overrides: [
-            { method: 'email', minutes: minutesBefore },
-            { method: 'popup', minutes: minutesBefore },
-          ],
+
+    // Mock events for development
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          id: 'fake_event_1',
+          title: 'Faculty Meeting',
+          startTime: new Date(Date.now() + 86400000).toISOString(), // tomorrow
+          endTime: new Date(Date.now() + 86400000 + 3600000).toISOString(),
         },
-      };
-      
-      await gapi.client.calendar.events.update({
-        calendarId: 'primary',
-        eventId: eventId,
-        resource: updatedEvent,
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Error setting up reminder:", error);
-      return false;
+        {
+          id: 'fake_event_2',
+          title: 'Department Review',
+          startTime: new Date(Date.now() + 172800000).toISOString(), // day after tomorrow
+          endTime: new Date(Date.now() + 172800000 + 7200000).toISOString(),
+        },
+        {
+          id: 'fake_event_3',
+          title: 'Student Advising',
+          startTime: new Date(Date.now() + 259200000).toISOString(), // 3 days from now
+          endTime: new Date(Date.now() + 259200000 + 5400000).toISOString(),
+        }
+      ];
     }
-  }
-  
-  // Get all events from calendar (development mode returns mock events)
-  public async getEvents(): Promise<any[]> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-    
-    if (!this.isSignedIn && !this.devMode) {
-      await this.signIn();
-    }
-    
-    // For development, return mock events
-    if (this.devMode) {
-      console.log("🔄 [DEV MODE] Returning mock events:", this.mockEvents.length);
-      return this.mockEvents;
-    }
-    
+
     try {
-      const now = new Date();
-      const oneMonthLater = new Date(now);
-      oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
-      
-      // Fix: Use bracket notation to access the 'list' method
-      const response = await gapi.client.calendar.events['list']({
+      const timeMin = new Date().toISOString();
+      const timeMax = new Date(Date.now() + days * 86400000).toISOString();
+
+      // @ts-ignore - gapi is loaded from CDN
+      const response = await gapi.client.calendar.events.list({
         calendarId: 'primary',
-        timeMin: now.toISOString(),
-        timeMax: oneMonthLater.toISOString(),
+        timeMin,
+        timeMax,
         singleEvents: true,
-        orderBy: 'startTime'
+        orderBy: 'startTime',
       });
-      
-      return response.result.items || [];
+
+      return response.result.items.map((event: any) => ({
+        id: event.id,
+        title: event.summary,
+        description: event.description,
+        location: event.location,
+        startTime: event.start.dateTime || event.start.date,
+        endTime: event.end.dateTime || event.end.date,
+      }));
     } catch (error) {
-      console.error("Error fetching events from Google Calendar:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch events from Google Calendar",
-        variant: "destructive",
-        duration: 3000,
-      });
+      console.error('Failed to get events from Google Calendar:', error);
       return [];
     }
   }
-  
-  // Check for scheduling conflicts
-  public async detectScheduleConflicts(
-    events: (ScheduleEntry | ResourceSchedule)[]
-  ): Promise<{ event1: any; event2: any }[]> {
-    const conflicts: { event1: any; event2: any }[] = [];
-    
-    // Sort events by start time for more efficient conflict detection
-    const sortedEvents = [...events].sort((a, b) => 
-      a.startTime.getTime() - b.startTime.getTime()
-    );
-    
-    // Check for overlapping time slots
-    for (let i = 0; i < sortedEvents.length - 1; i++) {
-      for (let j = i + 1; j < sortedEvents.length; j++) {
-        const event1 = sortedEvents[i];
-        const event2 = sortedEvents[j];
-        
-        // Check for resource ID conflicts (for ResourceSchedule type)
-        if (
-          'resourceId' in event1 && 
-          'resourceId' in event2 && 
-          event1.resourceId === event2.resourceId
-        ) {
-          // Check for time overlap
-          if (
-            (event1.startTime <= event2.endTime) && 
-            (event1.endTime >= event2.startTime)
-          ) {
-            conflicts.push({ event1, event2 });
-          }
+
+  /**
+   * Detect scheduling conflicts
+   */
+  async detectScheduleConflicts(scheduleEntries: any[]): Promise<any[]> {
+    // For development, return mock conflicts
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          event1: { title: 'Department Meeting', startTime: '2023-06-15T10:00:00' },
+          event2: { title: 'Faculty Workshop', startTime: '2023-06-15T09:30:00' }
+        },
+        {
+          event1: { title: 'Research Seminar', startTime: '2023-06-16T14:00:00' },
+          event2: { title: 'Committee Meeting', startTime: '2023-06-16T13:30:00' }
         }
+      ];
+    }
+
+    // Implementation for production would compare schedules
+    // This would check for overlaps between events
+    const conflicts: any[] = [];
+    
+    // O(n²) time complexity - could be optimized further in production
+    for (let i = 0; i < scheduleEntries.length; i++) {
+      for (let j = i + 1; j < scheduleEntries.length; j++) {
+        const event1 = scheduleEntries[i];
+        const event2 = scheduleEntries[j];
         
-        // Check for faculty ID conflicts
-        if (
-          'facultyId' in event1 && 
-          'facultyId' in event2 && 
-          event1.facultyId === event2.facultyId
-        ) {
-          // Check for time overlap
-          if (
-            (event1.startTime <= event2.endTime) && 
-            (event1.endTime >= event2.startTime)
-          ) {
-            conflicts.push({ event1, event2 });
-          }
+        // Check if events overlap
+        if (this.eventsOverlap(event1, event2)) {
+          conflicts.push({ event1, event2 });
         }
       }
     }
     
     return conflicts;
   }
+
+  /**
+   * Check if two events overlap in time
+   */
+  private eventsOverlap(event1: any, event2: any): boolean {
+    const event1Start = new Date(event1.startTime).getTime();
+    const event1End = new Date(event1.endTime || 
+      new Date(event1Start + 3600000).toISOString()).getTime(); // Default 1 hour if no end time
+    
+    const event2Start = new Date(event2.startTime).getTime();
+    const event2End = new Date(event2.endTime || 
+      new Date(event2Start + 3600000).toISOString()).getTime(); // Default 1 hour if no end time
+    
+    // Check for overlap
+    return (event1Start < event2End && event1End > event2Start);
+  }
 }
 
-// Export a singleton instance
-export const googleCalendarService = GoogleCalendarService.getInstance();
+export const googleCalendarService = new GoogleCalendarService();

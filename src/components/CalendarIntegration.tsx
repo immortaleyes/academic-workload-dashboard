@@ -1,211 +1,197 @@
 
 import React, { useState, useEffect } from "react";
-import { useFaculty } from "@/context/FacultyContext";
-import { googleCalendarService } from "@/lib/googleCalendarService";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Calendar, CircleAlert, Clock, Send } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  Calendar,
+  Plus,
+  RefreshCw,
+  Trash2,
+  CalendarPlus,
+  AlertTriangle
+} from "lucide-react";
+import { googleCalendarService } from "@/lib/googleCalendarService";
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 
 export const CalendarIntegration: React.FC = () => {
-  const { faculty } = useFaculty();
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
-  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
-  
+  const [events, setEvents] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAddEvent, setShowAddEvent] = useState(false);
+
   useEffect(() => {
-    const initializeGoogleCalendar = async () => {
+    const checkGoogleAuth = async () => {
       await googleCalendarService.initialize();
-      setIsGoogleConnected(googleCalendarService.isAuthenticated());
+      const isAuthenticated = googleCalendarService.isAuthenticated();
+      setIsGoogleConnected(isAuthenticated);
+      
+      if (isAuthenticated) {
+        fetchEvents();
+      }
     };
     
-    initializeGoogleCalendar();
+    checkGoogleAuth();
   }, []);
-  
-  useEffect(() => {
-    if (faculty.length > 0) {
-      // Get upcoming events from the faculty schedules
-      const now = new Date();
-      const allEvents = faculty.flatMap(f => 
-        f.schedule.map(event => ({
-          ...event,
-          facultyName: f.name,
-          facultyId: f.id
-        }))
-      );
-      
-      // Filter for events in the next 48 hours
-      const fortyEightHoursLater = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-      const upcoming = allEvents.filter(event => 
-        event.startTime > now && event.startTime <= fortyEightHoursLater
-      ).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-      
-      setUpcomingEvents(upcoming.slice(0, 5)); // Show top 5 upcoming events
+
+  const fetchEvents = async () => {
+    setIsLoading(true);
+    try {
+      const calendarEvents = await googleCalendarService.getEvents();
+      setEvents(calendarEvents);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load calendar events",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }, [faculty]);
-  
+  };
+
   const handleGoogleSignIn = async () => {
     const success = await googleCalendarService.signIn();
     setIsGoogleConnected(success);
-  };
-  
-  const handleSendToCalendar = async (facultyId: string) => {
-    const facultyMember = faculty.find(f => f.id === facultyId);
-    if (!facultyMember) return;
     
-    try {
-      // Add all schedule entries to Google Calendar
-      for (const event of facultyMember.schedule) {
-        const eventId = await googleCalendarService.addEvent(event);
-        if (eventId) {
-          // Add a 30-minute reminder
-          await googleCalendarService.setupReminder(eventId, 30);
-        }
-      }
-      
+    if (success) {
       toast({
-        title: "Calendar Updated",
-        description: `${facultyMember.name}'s schedule has been added to Google Calendar with reminders`,
-        duration: 3000,
+        title: "Connected",
+        description: "Successfully connected to Google Calendar",
       });
-    } catch (error) {
-      console.error("Error sending to Google Calendar:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update Google Calendar",
-        variant: "destructive",
-        duration: 3000,
-      });
+      fetchEvents();
     }
   };
-  
-  const handleSendAllToCalendar = async () => {
-    if (!isGoogleConnected) {
-      await handleGoogleSignIn();
-      if (!googleCalendarService.isAuthenticated()) return;
-    }
-    
-    let successCount = 0;
-    const totalEvents = faculty.reduce((sum, f) => sum + f.schedule.length, 0);
-    
-    try {
-      for (const facultyMember of faculty) {
-        for (const event of facultyMember.schedule) {
-          const eventId = await googleCalendarService.addEvent({
-            ...event,
-            title: `${event.title} - ${facultyMember.name}`
-          });
-          
-          if (eventId) {
-            await googleCalendarService.setupReminder(eventId, 30);
-            successCount++;
-          }
-        }
-      }
-      
-      toast({
-        title: "Calendar Updated",
-        description: `Successfully added ${successCount} of ${totalEvents} events to Google Calendar with reminders`,
-        duration: 3000,
-      });
-    } catch (error) {
-      console.error("Error sending all to Google Calendar:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update Google Calendar",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
+
+  const handleGoogleSignOut = async () => {
+    await googleCalendarService.signOut();
+    setIsGoogleConnected(false);
+    setEvents([]);
+    toast({
+      title: "Disconnected",
+      description: "Disconnected from Google Calendar",
+    });
   };
-  
+
+  const refreshEvents = async () => {
+    await fetchEvents();
+    toast({
+      title: "Refreshed",
+      description: "Calendar events have been refreshed",
+    });
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-primary" />
-          Calendar Integration
-        </CardTitle>
-        <CardDescription>
-          Set up reminders and sync faculty schedules to Google Calendar
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {!isGoogleConnected ? (
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              Connect to Google Calendar to set up automatic reminders for classes, labs and meetings
-            </p>
-            <Button onClick={handleGoogleSignIn} className="w-full">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Calendar Integration</h2>
+        <div className="flex items-center gap-2">
+          {isGoogleConnected ? (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={refreshEvents}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleGoogleSignOut}
+              >
+                Disconnect Google Calendar
+              </Button>
+            </>
+          ) : (
+            <Button 
+              variant="default" 
+              size="sm"
+              onClick={handleGoogleSignIn}
+            >
               <Calendar className="h-4 w-4 mr-2" />
               Connect Google Calendar
             </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Google Calendar</span>
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
-                Connected
-              </span>
-            </div>
-            
-            <Button 
-              onClick={handleSendAllToCalendar}
-              className="w-full"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Sync All Schedules to Calendar
-            </Button>
-            
-            <div className="mt-4">
-              <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                Upcoming Events
-              </h4>
-              
-              {upcomingEvents.length > 0 ? (
-                <div className="space-y-2">
-                  {upcomingEvents.map((event, index) => (
-                    <div 
-                      key={index}
-                      className="text-xs bg-gray-50 p-2 rounded border flex flex-col"
-                    >
-                      <div className="font-medium">{event.title}</div>
-                      <div className="text-muted-foreground">
-                        {format(event.startTime, "EEE, MMM d • h:mm a")}
+          )}
+        </div>
+      </div>
+      
+      {!isGoogleConnected ? (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Connect to Google Calendar to sync your faculty schedules and manage events from this dashboard.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>Upcoming Calendar Events</span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowAddEvent(!showAddEvent)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Event
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-center py-4">
+                  <RefreshCw className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mt-2">Loading calendar events...</p>
+                </div>
+              ) : events.length > 0 ? (
+                <div className="space-y-4">
+                  {events.map((event, index) => (
+                    <div key={index} className="flex justify-between items-start border-b pb-4 last:border-0 last:pb-0">
+                      <div>
+                        <h4 className="font-medium">{event.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {event.startTime ? format(new Date(event.startTime), "EEE, MMM d • h:mm a") : 'No date'}
+                        </p>
                       </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <div className="text-muted-foreground">{event.facultyName}</div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 px-2"
-                          onClick={() => handleSendToCalendar(event.facultyId)}
-                        >
-                          <Send className="h-3 w-3 mr-1" />
-                          Send to Calendar
-                        </Button>
-                      </div>
+                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-sm text-muted-foreground py-4">
-                  <CircleAlert className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
-                  No upcoming events in the next 48 hours
+                <div className="text-center py-8">
+                  <Calendar className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
+                  <p className="text-muted-foreground mt-2">No upcoming events found</p>
+                  <Button variant="outline" className="mt-4" onClick={() => setShowAddEvent(true)}>
+                    <CalendarPlus className="h-4 w-4 mr-2" />
+                    Create New Event
+                  </Button>
                 </div>
               )}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            </CardContent>
+          </Card>
+          
+          {showAddEvent && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Add New Calendar Event</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Event creation form implementation coming soon!
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
